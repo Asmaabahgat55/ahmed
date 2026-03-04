@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To My Love - Heartbeat Edition</title>
+    <title>To My Love - Heartbeat & Music</title>
     <style>
         body {
             margin: 0;
@@ -39,21 +39,23 @@
             90% { opacity: 0.4; }
             100% { transform: translateY(-10vh) scale(1.2) rotate(360deg); opacity: 0; }
         }
-        /* رسالة تذكير لتفعيل الصوت */
         #audioMsg {
             position: absolute;
             bottom: 20px;
             color: white;
             font-family: Arial;
-            font-size: 12px;
+            font-size: 14px;
             z-index: 100;
-            opacity: 0.6;
+            opacity: 0.8;
+            background: rgba(255, 0, 0, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
         }
     </style>
 </head>
 <body>
 
-    <div id="audioMsg">اضغطي في أي مكان لتفعيل صوت دقات القلب ❤️</div>
+    <div id="audioMsg">اضغطي هنا لتفعيل الموسيقى ودقات القلب ❤️</div>
     <div class="bg-hearts-container" id="bgHearts"></div>
     <canvas id="mainCanvas"></canvas>
 
@@ -66,25 +68,49 @@
         let allPoints = [];
         const heartSize = 3;
         let audioCtx = null;
+        let musicInterval = null;
 
-        // وظيفة لتوليد صوت دقة القلب برمجياً
-        function playHeartbeatSound() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
+        // 1. صوت دقات قلب قوي (Heartbeat)
+        function playStrongHeartbeat() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
 
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(60, audioCtx.currentTime); // تردد منخفض للدقة
-            oscillator.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.type = 'triangle'; // صوت أعمق وأقوى من الـ sine
+            osc.frequency.setValueAtTime(50, audioCtx.currentTime); 
+            osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
 
-            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.6, audioCtx.currentTime); // رفع الصوت
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
 
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
 
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.1);
+        // 2. موسيقى خلفية هادئة (Ambient Background Music)
+        function playBackgroundMusic() {
+            const notes = [261.63, 329.63, 392.00, 523.25]; // نغمات C major هادئة
+            let i = 0;
+            musicInterval = setInterval(() => {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(notes[i % notes.length], audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime); // موسيقى أوطى من الدقات
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 2);
+                i++;
+            }, 1000);
         }
 
         function createRichBg() {
@@ -95,8 +121,7 @@
                 heart.className = 'floating-heart';
                 heart.innerText = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
                 heart.style.left = Math.random() * 100 + 'vw';
-                let size = (Math.random() * 20 + 10) + 'px';
-                heart.style.fontSize = size;
+                heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
                 heart.style.animationDuration = (Math.random() * 8 + 6) + 's';
                 heart.style.animationDelay = (Math.random() * 10) + 's';
                 heart.style.opacity = Math.random() * 0.5 + 0.2;
@@ -134,9 +159,7 @@
             for (let y = 0; y < canvas.height; y += 4) {
                 for (let x = 0; x < canvas.width; x += 4) {
                     let i = (y * canvas.width + x) * 4;
-                    if (data[i] > 128) {
-                        allPoints.push({ x: x, y: y });
-                    }
+                    if (data[i] > 128) allPoints.push({ x: x, y: y });
                 }
             }
             allPoints.sort((a, b) => a.y - b.y + (Math.random() * 20 - 10));
@@ -145,22 +168,17 @@
         let currentIdx = 0;
         function animate() {
             if (currentIdx < allPoints.length) {
-                // تقليل العدد لـ 4 قلوب فقط في كل إطار لجعلها أبطأ بكثير
-                for (let i = 0; i < 4; i++) {
+                for (let i = 0; i < 4; i++) { // بطء شديد
                     if (currentIdx < allPoints.length) {
                         const p = allPoints[currentIdx];
                         drawSmallHeart(p.x, p.y, heartSize, "#FF0000");
                         currentIdx++;
                     }
                 }
+                // دقة القلب تتكرر كل فترة قصيرة مع الرسم
+                if (currentIdx % 35 === 0) playStrongHeartbeat();
 
-                // إصدار صوت الدقة بشكل متناغم مع الرسم
-                if (currentIdx % 40 === 0) { 
-                    playHeartbeatSound();
-                }
-
-                // زيادة التأخير لـ 40ms لجعل الكتابة هادئة وبطيئة
-                setTimeout(() => requestAnimationFrame(animate), 40);
+                setTimeout(() => requestAnimationFrame(animate), 50); // سرعة ابطأ قليلاً
             } else {
                 ctx.fillStyle = "white";
                 ctx.font = "bold 40px Arial";
@@ -171,11 +189,11 @@
             }
         }
 
-        // بدء الصوت عند أول ضغطة (سياسة المتصفحات)
         window.onclick = () => {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                document.getElementById('audioMsg').innerText = "تم تفعيل الصوت...";
+                playBackgroundMusic();
+                document.getElementById('audioMsg').innerText = "❤️ المشاعر تعمل الآن...";
                 setTimeout(() => document.getElementById('audioMsg').style.opacity = "0", 2000);
             }
         };
@@ -183,7 +201,6 @@
         createRichBg();
         setupPoints();
         animate();
-
         window.addEventListener('resize', () => location.reload());
     </script>
 </body>
