@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To My Love - Enhanced Background</title>
+    <title>To My Love - Slow Formation</title>
     <style>
         body {
             margin: 0;
@@ -18,19 +18,18 @@
         canvas {
             display: block;
             position: absolute;
-            z-index: 10; /* الكانفاس فوق الخلفية */
+            z-index: 10;
         }
-        /* طبقة الخلفية الغنية بالقلوب الطائرة */
         .bg-hearts-container {
             position: absolute;
             width: 100%;
             height: 100%;
-            z-index: 1; /* خلف النص */
+            z-index: 1;
             overflow: hidden;
         }
         .floating-heart {
             position: absolute;
-            color: rgba(255, 255, 255, 0.4); /* قلوب بيضاء نصف شفافة */
+            color: rgba(255, 255, 255, 0.4);
             animation: floatUp linear infinite;
         }
         @keyframes floatUp {
@@ -44,7 +43,6 @@
 <body>
 
     <div class="bg-hearts-container" id="bgHearts"></div>
-
     <canvas id="mainCanvas"></canvas>
 
     <script>
@@ -56,39 +54,22 @@
         let allPoints = [];
         const heartSize = 3;
 
-        // --- 1. إنشاء الخلفية الغنية بالقلوب الطائرة (أكثر كثافة وتنوعاً) ---
         function createRichBg() {
             const bg = document.getElementById('bgHearts');
             const heartSymbols = ['❤', '💖', '❣', '🤍'];
-            
-            // إنشاء 80 قلب طائر بخصائص عشوائية
             for (let i = 0; i < 80; i++) {
                 let heart = document.createElement('div');
                 heart.className = 'floating-heart';
-                // اختيار رمز قلب عشوائي
                 heart.innerText = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
-                
-                // موقع أفقي عشوائي
                 heart.style.left = Math.random() * 100 + 'vw';
-                
-                // حجم عشوائي (بين 10px و 30px)
-                let size = (Math.random() * 20 + 10) + 'px';
-                heart.style.fontSize = size;
-                
-                // مدة أنيميشن عشوائية (بين 6s و 14s) لسرعات مختلفة
+                heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
                 heart.style.animationDuration = (Math.random() * 8 + 6) + 's';
-                
-                // تأخير عشوائي لبدء الأنميشن حتى لا تظهر كلها مرة واحدة
                 heart.style.animationDelay = (Math.random() * 10) + 's';
-                
-                // شفافية عشوائية قليلاً
                 heart.style.opacity = Math.random() * 0.5 + 0.2;
-
                 bg.appendChild(heart);
             }
         }
 
-        // --- 2. دالة رسم القلب الصغير (الذرة الحمراء المكونة للنص) ---
         function drawSmallHeart(x, y, size, color) {
             ctx.fillStyle = color;
             ctx.beginPath();
@@ -104,71 +85,58 @@
             ctx.fill();
         }
 
-        // --- 3. تحليل النصوص وتحويلها لنقاط (الترتيب من الأعلى للأسفل) ---
         function setupPoints() {
             ctx.fillStyle = "white";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             
-            // رسم الجملة الأولى في الخفاء
             ctx.font = "bold 80px Arial Black";
-            ctx.fillText("love you", canvas.width / 2, canvas.height / 2 - 60);
+            ctx.fillText("MY LOVELY HUSBAND", canvas.width / 2, canvas.height / 2 - 60);
             
-            // رسم اسم أحمد تحتها في الخفاء
             ctx.font = "bold 60px Arial Black";
-            ctx.fillText("medo", canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillText("AHMED", canvas.width / 2, canvas.height / 2 + 40);
             
             let data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // استخراج النقاط
             for (let y = 0; y < canvas.height; y += 4) {
                 for (let x = 0; x < canvas.width; x += 4) {
                     let i = (y * canvas.width + x) * 4;
-                    if (data[i] > 128) { // إذا كان البكسل جزءاً من الحرف
+                    if (data[i] > 128) {
                         allPoints.push({ x: x, y: y });
                     }
                 }
             }
-            // ترتيب النقاط من فوق لتحت مع قليل من العشوائية الأفقية
             allPoints.sort((a, b) => a.y - b.y + (Math.random() * 20 - 10));
         }
 
-        // --- 4. التحريك (رسم القلوب الحمراء المكونة للنص) ---
         let currentIdx = 0;
         function animate() {
             if (currentIdx < allPoints.length) {
-                // رسم 15 قلب في كل إطار
-                for (let i = 0; i < 15; i++) {
+                // تقليل عدد القلوب المرسومة في كل إطار (من 15 إلى 8) لجعلها أبطأ
+                for (let i = 0; i < 8; i++) { 
                     if (currentIdx < allPoints.length) {
                         const p = allPoints[currentIdx];
-                        // رسم قلب أحمر صغير دقيق
                         drawSmallHeart(p.x, p.y, heartSize, "#FF0000");
                         currentIdx++;
                     }
                 }
-                // سرعة التكون
-                setTimeout(() => requestAnimationFrame(animate), 15);
+                // زيادة وقت التأخير قليلاً (من 15 إلى 25)
+                setTimeout(() => requestAnimationFrame(animate), 25); 
             } else {
-                // ظهور الجملة الختامية بعد اكتمال القلوب
                 ctx.fillStyle = "white";
                 ctx.font = "bold 40px Arial";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillText("my lovely husband💋💋💋", canvas.width / 2, canvas.height / 2 + 150);
+                ctx.fillText("I LOVE YOU", canvas.width / 2, canvas.height / 2 + 150);
             }
         }
 
-        // --- بدء التشغيل ---
-        createRichBg(); // إنشاء الخلفية أولاً
-        setupPoints();   // تحليل النص
-        animate();       // بدء التحريك
+        createRichBg();
+        setupPoints();
+        animate();
 
-        // إعادة الضبط عند تغيير حجم النافذة
         window.addEventListener('resize', () => location.reload());
     </script>
 </body>
-
 </html>
-
-
