@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To My Love - Slow Formation</title>
+    <title>To My Love - Heartbeat Edition</title>
     <style>
         body {
             margin: 0;
@@ -14,6 +14,7 @@
             align-items: center;
             height: 100vh;
             font-family: 'Arial Black', sans-serif;
+            cursor: pointer;
         }
         canvas {
             display: block;
@@ -38,10 +39,21 @@
             90% { opacity: 0.4; }
             100% { transform: translateY(-10vh) scale(1.2) rotate(360deg); opacity: 0; }
         }
+        /* رسالة تذكير لتفعيل الصوت */
+        #audioMsg {
+            position: absolute;
+            bottom: 20px;
+            color: white;
+            font-family: Arial;
+            font-size: 12px;
+            z-index: 100;
+            opacity: 0.6;
+        }
     </style>
 </head>
 <body>
 
+    <div id="audioMsg">اضغطي في أي مكان لتفعيل صوت دقات القلب ❤️</div>
     <div class="bg-hearts-container" id="bgHearts"></div>
     <canvas id="mainCanvas"></canvas>
 
@@ -53,6 +65,27 @@
 
         let allPoints = [];
         const heartSize = 3;
+        let audioCtx = null;
+
+        // وظيفة لتوليد صوت دقة القلب برمجياً
+        function playHeartbeatSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(60, audioCtx.currentTime); // تردد منخفض للدقة
+            oscillator.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
 
         function createRichBg() {
             const bg = document.getElementById('bgHearts');
@@ -62,7 +95,8 @@
                 heart.className = 'floating-heart';
                 heart.innerText = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
                 heart.style.left = Math.random() * 100 + 'vw';
-                heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
+                let size = (Math.random() * 20 + 10) + 'px';
+                heart.style.fontSize = size;
                 heart.style.animationDuration = (Math.random() * 8 + 6) + 's';
                 heart.style.animationDelay = (Math.random() * 10) + 's';
                 heart.style.opacity = Math.random() * 0.5 + 0.2;
@@ -89,12 +123,10 @@
             ctx.fillStyle = "white";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            
             ctx.font = "bold 80px Arial Black";
-            ctx.fillText("MY LOVELY HUSBAND", canvas.width / 2, canvas.height / 2 - 60);
-            
+            ctx.fillText("love you", canvas.width / 2, canvas.height / 2 - 60);
             ctx.font = "bold 60px Arial Black";
-            ctx.fillText("AHMED", canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillText("medo", canvas.width / 2, canvas.height / 2 + 40);
             
             let data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -113,24 +145,40 @@
         let currentIdx = 0;
         function animate() {
             if (currentIdx < allPoints.length) {
-                // تقليل عدد القلوب المرسومة في كل إطار (من 15 إلى 8) لجعلها أبطأ
-                for (let i = 0; i < 8; i++) { 
+                // تقليل العدد لـ 4 قلوب فقط في كل إطار لجعلها أبطأ بكثير
+                for (let i = 0; i < 4; i++) {
                     if (currentIdx < allPoints.length) {
                         const p = allPoints[currentIdx];
                         drawSmallHeart(p.x, p.y, heartSize, "#FF0000");
                         currentIdx++;
                     }
                 }
-                // زيادة وقت التأخير قليلاً (من 15 إلى 25)
-                setTimeout(() => requestAnimationFrame(animate), 25); 
+
+                // إصدار صوت الدقة بشكل متناغم مع الرسم
+                if (currentIdx % 40 === 0) { 
+                    playHeartbeatSound();
+                }
+
+                // زيادة التأخير لـ 40ms لجعل الكتابة هادئة وبطيئة
+                setTimeout(() => requestAnimationFrame(animate), 40);
             } else {
                 ctx.fillStyle = "white";
                 ctx.font = "bold 40px Arial";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillText("I LOVE YOU", canvas.width / 2, canvas.height / 2 + 150);
+                ctx.fillText("my lovely husband💋💋💋", canvas.width / 2, canvas.height / 2 + 150);
+                document.getElementById('audioMsg').style.display = 'none';
             }
         }
+
+        // بدء الصوت عند أول ضغطة (سياسة المتصفحات)
+        window.onclick = () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                document.getElementById('audioMsg').innerText = "تم تفعيل الصوت...";
+                setTimeout(() => document.getElementById('audioMsg').style.opacity = "0", 2000);
+            }
+        };
 
         createRichBg();
         setupPoints();
