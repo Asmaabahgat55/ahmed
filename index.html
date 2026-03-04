@@ -20,20 +20,20 @@
             position: absolute;
             z-index: 10;
         }
-        /* القلب الكبير النابض */
+        /* قلب البداية: جذاب ونابض بهدوء */
         #startBtn {
             position: absolute;
             z-index: 100;
-            font-size: 120px;
+            font-size: 110px;
             color: #FF0000;
             cursor: pointer;
-            animation: pulse 0.6s infinite;
-            filter: drop-shadow(0 0 30px #ff0000);
+            animation: softPulse 1.5s infinite;
+            filter: drop-shadow(0 0 25px rgba(255, 0, 0, 0.6));
             user-select: none;
         }
-        @keyframes pulse {
+        @keyframes softPulse {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 0.7; }
             100% { transform: scale(1); opacity: 1; }
         }
     </style>
@@ -43,8 +43,7 @@
     <div id="startBtn">❤️</div>
 
     <audio id="loveAudio" loop>
-        <source src="https://www.myinstants.com/media/sounds/love-you-love-you.mp3" type="audio/mpeg">
-        <source src="https://actions.google.com/sounds/v1/human/heartbeat.ogg" type="audio/ogg">
+        <source src="https://www.myinstants.com/media/sounds/love-you-3.mp3" type="audio/mpeg">
     </audio>
 
     <canvas id="mainCanvas"></canvas>
@@ -59,7 +58,7 @@
         canvas.height = window.innerHeight;
 
         let allPoints = [];
-        const heartSize = 4;
+        const heartSize = 3.5;
         let isStarted = false;
 
         function setupPoints() {
@@ -67,15 +66,16 @@
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             
-            // رسم الكلمات أولاً في ذاكرة مؤقتة لأخذ نقاطها
+            // تحديد أماكن الكلمات
             ctx.font = "bold 85px Arial Black";
             ctx.fillText("love you", canvas.width / 2, canvas.height / 2 - 60);
-            ctx.font = "bold 70px Arial Black";
+            ctx.font = "bold 75px Arial Black";
             ctx.fillText("MIDO", canvas.width / 2, canvas.height / 2 + 50);
             
             let data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // استخراج النقاط لرسمها لاحقاً
             for (let y = 0; y < canvas.height; y += 5) {
                 for (let x = 0; x < canvas.width; x += 5) {
                     let i = (y * canvas.width + x) * 4;
@@ -84,45 +84,43 @@
                     }
                 }
             }
-            // ترتيب النقاط بشكل عشوائي قليلاً ليعطي تأثير "النبض" أثناء الكتابة
+            // ترتيب عشوائي ليعطي تأثير الانتشار الرومانسى
             allPoints.sort(() => Math.random() - 0.5);
         }
 
-        function drawHeart(x, y, size, color) {
+        function drawSmallHeart(x, y, size, color) {
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.moveTo(x, y + size / 4);
             ctx.quadraticCurveTo(x, y, x + size / 4, y);
             ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4);
             ctx.quadraticCurveTo(x + size / 2, y, x + size * 3/4, y);
-            ctx.quadraticCurveTo(x + size, y, x + size, y + size / 4);
-            ctx.quadraticCurveTo(x + size, y + size / 2, x + size * 3/4, y + size * 3/4);
-            ctx.lineTo(x + size / 2, y + size);
-            ctx.lineTo(x + size / 4, y + size * 3/4);
             ctx.quadraticCurveTo(x, y + size / 2, x, y + size / 4);
+            ctx.fill();
+            // رسم مبسط وسريع للقلب
+            ctx.arc(x, y, size/2, 0, Math.PI*2);
             ctx.fill();
         }
 
         let currentIdx = 0;
         function animate() {
             if (currentIdx < allPoints.length) {
-                // نزيد عدد القلوب التي تظهر مع كل "نبضة" صوتية
-                let speed = 8; 
-                for (let i = 0; i < speed; i++) {
+                // سرعة الرسم متناغمة مع هدوء الموسيقى
+                let batch = 5; 
+                for (let i = 0; i < batch; i++) {
                     if (currentIdx < allPoints.length) {
                         const p = allPoints[currentIdx];
-                        // تلوين القلوب بدرجات الأحمر والوردي
-                        let color = `hsl(${Math.random() * 20}, 100%, 50%)`;
-                        drawHeart(p.x, p.y, heartSize, color);
+                        let color = `rgb(${200 + Math.random() * 55}, 0, 0)`;
+                        drawSmallHeart(p.x, p.y, heartSize, color);
                         currentIdx++;
                     }
                 }
                 requestAnimationFrame(animate);
             } else {
-                // الرسالة النهائية
+                // الكلمة النهائية تظهر برقة
                 ctx.fillStyle = "white";
-                ctx.font = "italic bold 35px Arial";
-                ctx.fillText("My Lovely Husband 💋", canvas.width / 2, canvas.height / 2 + 160);
+                ctx.font = "italic 30px Arial";
+                ctx.fillText("Always & Forever 💋", canvas.width / 2, canvas.height / 2 + 160);
             }
         }
 
@@ -131,7 +129,8 @@
             isStarted = true;
             startBtn.style.display = 'none';
             
-            // تشغيل صوت "Love You" المتكرر
+            // خفض مستوى الموسيقى قليلاً لتكون هادئة
+            audio.volume = 0.5; 
             audio.play();
             
             animate();
