@@ -20,28 +20,21 @@
             position: absolute;
             z-index: 10;
         }
-        .bg-hearts-container {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            overflow: hidden;
-        }
-        /* القلب الكبير النابض كـ "فخ" رومانسي للضغط */
+        /* القلب الكبير النابض */
         #startBtn {
             position: absolute;
             z-index: 100;
-            font-size: 100px;
+            font-size: 120px;
             color: #FF0000;
             cursor: pointer;
-            animation: pulse 0.8s infinite;
+            animation: pulse 0.6s infinite;
+            filter: drop-shadow(0 0 30px #ff0000);
             user-select: none;
-            filter: drop-shadow(0 0 20px rgba(255,0,0,0.8));
         }
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.3); }
-            100% { transform: scale(1); }
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
@@ -49,46 +42,53 @@
 
     <div id="startBtn">❤️</div>
 
-    <iframe id="audioPlayer" width="0" height="0" src="" frameborder="0" allow="autoplay"></iframe>
+    <audio id="loveAudio" loop>
+        <source src="https://www.myinstants.com/media/sounds/love-you-love-you.mp3" type="audio/mpeg">
+        <source src="https://actions.google.com/sounds/v1/human/heartbeat.ogg" type="audio/ogg">
+    </audio>
 
-    <div class="bg-hearts-container" id="bgHearts"></div>
     <canvas id="mainCanvas"></canvas>
 
     <script>
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
         const startBtn = document.getElementById('startBtn');
-        const audioPlayer = document.getElementById('audioPlayer');
+        const audio = document.getElementById('loveAudio');
         
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
         let allPoints = [];
-        const heartSize = 3;
+        const heartSize = 4;
         let isStarted = false;
 
         function setupPoints() {
             ctx.fillStyle = "white";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.font = "bold 80px Arial Black";
+            
+            // رسم الكلمات أولاً في ذاكرة مؤقتة لأخذ نقاطها
+            ctx.font = "bold 85px Arial Black";
             ctx.fillText("love you", canvas.width / 2, canvas.height / 2 - 60);
-            ctx.font = "bold 65px Arial Black";
-            ctx.fillText("MIDO", canvas.width / 2, canvas.height / 2 + 40);
+            ctx.font = "bold 70px Arial Black";
+            ctx.fillText("MIDO", canvas.width / 2, canvas.height / 2 + 50);
             
             let data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            for (let y = 0; y < canvas.height; y += 4) {
-                for (let x = 0; x < canvas.width; x += 4) {
+            for (let y = 0; y < canvas.height; y += 5) {
+                for (let x = 0; x < canvas.width; x += 5) {
                     let i = (y * canvas.width + x) * 4;
-                    if (data[i] > 128) allPoints.push({ x: x, y: y });
+                    if (data[i] > 128) {
+                        allPoints.push({ x: x, y: y });
+                    }
                 }
             }
-            allPoints.sort((a, b) => a.y - b.y + (Math.random() * 30 - 15));
+            // ترتيب النقاط بشكل عشوائي قليلاً ليعطي تأثير "النبض" أثناء الكتابة
+            allPoints.sort(() => Math.random() - 0.5);
         }
 
-        function drawSmallHeart(x, y, size, color) {
+        function drawHeart(x, y, size, color) {
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.moveTo(x, y + size / 4);
@@ -106,35 +106,39 @@
         let currentIdx = 0;
         function animate() {
             if (currentIdx < allPoints.length) {
-                for (let i = 0; i < 4; i++) {
+                // نزيد عدد القلوب التي تظهر مع كل "نبضة" صوتية
+                let speed = 8; 
+                for (let i = 0; i < speed; i++) {
                     if (currentIdx < allPoints.length) {
                         const p = allPoints[currentIdx];
-                        drawSmallHeart(p.x, p.y, heartSize, "#FF0000");
+                        // تلوين القلوب بدرجات الأحمر والوردي
+                        let color = `hsl(${Math.random() * 20}, 100%, 50%)`;
+                        drawHeart(p.x, p.y, heartSize, color);
                         currentIdx++;
                     }
                 }
-                setTimeout(() => requestAnimationFrame(animate), 55); 
+                requestAnimationFrame(animate);
             } else {
+                // الرسالة النهائية
                 ctx.fillStyle = "white";
-                ctx.font = "bold 40px Arial";
-                ctx.textAlign = "center";
-                ctx.fillText("my lovely husband💋", canvas.width / 2, canvas.height / 2 + 150);
+                ctx.font = "italic bold 35px Arial";
+                ctx.fillText("My Lovely Husband 💋", canvas.width / 2, canvas.height / 2 + 160);
             }
         }
 
-        // الحيلة: عند الضغط على القلب يبدأ الجزء المطلوب من الأغنية فوراً
         startBtn.addEventListener('click', () => {
             if (isStarted) return;
             isStarted = true;
             startBtn.style.display = 'none';
-
-            // هذا الرابط للأغنية الحقيقية (Angel) ويبدأ من مقطع Love you (دقيقة 2:40 تقريباً)
-            audioPlayer.src = "https://www.youtube.com/embed/e8cuqDEY474?autoplay=1&start=160&loop=1";
-
+            
+            // تشغيل صوت "Love You" المتكرر
+            audio.play();
+            
             animate();
         });
 
         setupPoints();
+        window.addEventListener('resize', () => location.reload());
     </script>
 </body>
 </html>
